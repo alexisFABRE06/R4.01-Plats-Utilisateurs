@@ -2,6 +2,7 @@ package infrastructure;
 
 import application.UtilisateurService;
 import domain.Utilisateur;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -16,8 +17,12 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UtilisateurRessource {
 
-    // Injection (ou instanciation simple pour le TP) du service
-    private UtilisateurService service = new UtilisateurService();
+    private final UtilisateurService service;
+
+    @Inject
+    public UtilisateurRessource(UtilisateurService service) {
+        this.service = service;
+    }
 
     /**
      * GET /utilisateurs - Récupère tous les utilisateurs

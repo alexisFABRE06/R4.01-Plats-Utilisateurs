@@ -2,6 +2,7 @@ package infrastructure;
 
 import application.PlatService;
 import domain.Plat;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -16,8 +17,12 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class PlatRessource {
 
-    // Injection (ou instanciation simple pour le TP) du service
-    private PlatService service = new PlatService();
+    private final PlatService service;
+
+    @Inject
+    public PlatRessource(PlatService service) {
+        this.service = service;
+    }
 
     /**
      * GET /plats - Récupère tous les plats
