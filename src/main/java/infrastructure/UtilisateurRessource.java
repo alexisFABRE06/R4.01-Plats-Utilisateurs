@@ -1,12 +1,13 @@
 package infrastructure;
 
+import application.UtilisateurRepositoryInterface;
 import application.UtilisateurService;
 import domain.Utilisateur;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
 
 /**
  * Ressource REST pour la gestion des utilisateurs.
@@ -15,21 +16,24 @@ import java.util.List;
 @Path("/utilisateurs")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@ApplicationScoped
 public class UtilisateurRessource {
 
-    private final UtilisateurService service;
+    private UtilisateurService service;
 
-    @Inject
-    public UtilisateurRessource(UtilisateurService service) {
-        this.service = service;
+    public UtilisateurRessource() {
+    }
+
+    public @Inject UtilisateurRessource(UtilisateurRepositoryInterface utilisateurRepo) {
+        this.service = new UtilisateurService(utilisateurRepo);
     }
 
     /**
      * GET /utilisateurs - Récupère tous les utilisateurs
      */
     @GET
-    public List<Utilisateur> getAll() {
-        return service.listerTousLesUtilisateurs();
+    public String getAll() {
+        return service.getAllUtilisateursJSON();
     }
 
     /**
@@ -37,25 +41,24 @@ public class UtilisateurRessource {
      */
     @GET
     @Path("{id}")
-    public Response getById(@PathParam("id") Long id) {
-        return service.obtenirUtilisateurParId(id)
-                .map(utilisateur -> Response.ok(utilisateur).build())
-                .orElse(Response.status(Response.Status.NOT_FOUND)
-                        .entity("Utilisateur non trouvé avec l'ID: " + id).build());
+    public String getById(@PathParam("id") Long id) {
+        String result = service.getUtilisateurJSON(id);
+        if (result == null) {
+            throw new NotFoundException();
+        }
+        return result;
     }
 
     /**
      * POST /utilisateurs - Crée un nouvel utilisateur
      */
     @POST
-    public Response create(UtilisateurInput input) {
-        try {
-            Utilisateur nouveau = service.creerNouvelUtilisateur(input);
-            return Response.status(Response.Status.CREATED).entity(nouveau).build();
-        } catch (Exception e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Erreur lors de la création : " + e.getMessage()).build();
+    public Response create(Utilisateur utilisateur) {
+        String created = service.createUtilisateurJSON(utilisateur);
+        if (created == null) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
         }
+        return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
     /**
@@ -63,11 +66,11 @@ public class UtilisateurRessource {
      */
     @PUT
     @Path("{id}")
-    public Response update(@PathParam("id") Long id, UtilisateurInput input) {
-        return service.modifierUtilisateur(id, input)
-                .map(utilisateur -> Response.ok(utilisateur).build())
-                .orElse(Response.status(Response.Status.NOT_FOUND)
-                        .entity("Utilisateur non trouvé avec l'ID: " + id).build());
+    public Response update(@PathParam("id") Long id, Utilisateur utilisateur) {
+        if (!service.updateUtilisateur(id, utilisateur)) {
+            throw new NotFoundException();
+        }
+        return Response.ok("updated").build();
     }
 
     /**
@@ -76,11 +79,9 @@ public class UtilisateurRessource {
     @DELETE
     @Path("{id}")
     public Response delete(@PathParam("id") Long id) {
-        if (service.supprimerUtilisateur(id)) {
-            return Response.noContent().build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Utilisateur non trouvé avec l'ID: " + id).build();
+        if (!service.deleteUtilisateur(id)) {
+            throw new NotFoundException();
         }
+        return Response.ok("deleted").build();
     }
 }

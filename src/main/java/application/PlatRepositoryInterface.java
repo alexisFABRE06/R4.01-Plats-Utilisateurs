@@ -1,22 +1,21 @@
 package application;
 
 import domain.Plat;
-import infrastructure.PlatInput;
-
-import java.util.List;
-import java.util.Optional;
+import java.util.ArrayList;
 
 /**
  * Contrat d'acces aux donnees des plats.
  */
 public interface PlatRepositoryInterface {
-    List<Plat> findAll();
+    void close();
 
-    Optional<Plat> findById(Long id);
+    Plat getPlat(Long id);
 
-    Plat create(PlatInput input);
+    ArrayList<Plat> getAllPlats();
 
-    Optional<Plat> update(Long id, PlatInput input);
+    Plat createPlat(Plat plat);
+
+    boolean updatePlat(Long id, Plat plat);
 
     boolean delete(Long id);
 }

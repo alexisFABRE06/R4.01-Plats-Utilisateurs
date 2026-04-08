@@ -3,26 +3,38 @@ package infrastructure;
 import application.UtilisateurRepositoryInterface;
 import domain.Utilisateur;
 
+import java.io.Closeable;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Repository JDBC pour les utilisateurs stockes sur MariaDB.
  */
-public class UtilisateurRepositoryMariadb implements UtilisateurRepositoryInterface {
-    private final Connection dbConnection;
+public class UtilisateurRepositoryMariadb implements UtilisateurRepositoryInterface, Closeable {
+    private Connection dbConnection;
 
-    public UtilisateurRepositoryMariadb(Connection dbConnection) {
-        this.dbConnection = dbConnection;
+    public UtilisateurRepositoryMariadb(String infoConnection, String user, String pwd)
+            throws SQLException, ClassNotFoundException {
+        Class.forName("org.mariadb.jdbc.Driver");
+        dbConnection = DriverManager.getConnection(infoConnection, user, pwd);
     }
 
     @Override
-    public List<Utilisateur> findAll() {
+    public void close() {
+        try {
+            if (dbConnection != null && !dbConnection.isClosed()) {
+                dbConnection.close();
+            }
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    @Override
+    public ArrayList<Utilisateur> getAllUtilisateurs() {
         String query = "SELECT id, nom, prenom, email, telephone, adresse_defaut, date_inscription FROM utilisateurs ORDER BY id";
-        List<Utilisateur> utilisateurs = new ArrayList<>();
+        ArrayList<Utilisateur> utilisateurs = new ArrayList<>();
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
@@ -36,38 +48,38 @@ public class UtilisateurRepositoryMariadb implements UtilisateurRepositoryInterf
     }
 
     @Override
-    public Optional<Utilisateur> findById(Long id) {
+    public Utilisateur getUtilisateur(Long id) {
         String query = "SELECT id, nom, prenom, email, telephone, adresse_defaut, date_inscription FROM utilisateurs WHERE id=?";
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapUtilisateur(rs));
+                    return mapUtilisateur(rs);
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Erreur SQL lors de la lecture d'un utilisateur", e);
         }
-        return Optional.empty();
+        return null;
     }
 
     @Override
-    public Utilisateur create(UtilisateurInput input) {
+    public Utilisateur createUtilisateur(Utilisateur utilisateur) {
         String query = "INSERT INTO utilisateurs (nom, prenom, email, telephone, adresse_defaut, date_inscription) VALUES (?, ?, ?, ?, ?, NOW())";
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, input.nom);
-            ps.setString(2, input.prenom);
-            ps.setString(3, input.email);
-            ps.setString(4, input.telephone);
-            ps.setString(5, input.adresseDefaut);
+            ps.setString(1, utilisateur.getNom());
+            ps.setString(2, utilisateur.getPrenom());
+            ps.setString(3, utilisateur.getEmail());
+            ps.setString(4, utilisateur.getTelephone());
+            ps.setString(5, utilisateur.getAdresseDefaut());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
                     Long id = keys.getLong(1);
-                    return findById(id).orElseThrow();
+                    return getUtilisateur(id);
                 }
             }
             throw new RuntimeException("Creation de l'utilisateur sans cle generee");
@@ -77,22 +89,18 @@ public class UtilisateurRepositoryMariadb implements UtilisateurRepositoryInterf
     }
 
     @Override
-    public Optional<Utilisateur> update(Long id, UtilisateurInput input) {
+    public boolean updateUtilisateur(Long id, Utilisateur utilisateur) {
         String query = "UPDATE utilisateurs SET nom=?, prenom=?, email=?, telephone=?, adresse_defaut=? WHERE id=?";
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query)) {
-            ps.setString(1, input.nom);
-            ps.setString(2, input.prenom);
-            ps.setString(3, input.email);
-            ps.setString(4, input.telephone);
-            ps.setString(5, input.adresseDefaut);
+            ps.setString(1, utilisateur.getNom());
+            ps.setString(2, utilisateur.getPrenom());
+            ps.setString(3, utilisateur.getEmail());
+            ps.setString(4, utilisateur.getTelephone());
+            ps.setString(5, utilisateur.getAdresseDefaut());
             ps.setLong(6, id);
 
-            int updatedRows = ps.executeUpdate();
-            if (updatedRows == 0) {
-                return Optional.empty();
-            }
-            return findById(id);
+            return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Erreur SQL lors de la mise a jour d'un utilisateur", e);
         }

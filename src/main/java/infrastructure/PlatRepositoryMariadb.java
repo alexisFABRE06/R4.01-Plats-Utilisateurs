@@ -3,26 +3,38 @@ package infrastructure;
 import application.PlatRepositoryInterface;
 import domain.Plat;
 
+import java.io.Closeable;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Repository JDBC pour les plats stockes sur MariaDB.
  */
-public class PlatRepositoryMariadb implements PlatRepositoryInterface {
-    private final Connection dbConnection;
+public class PlatRepositoryMariadb implements PlatRepositoryInterface, Closeable {
+    private Connection dbConnection;
 
-    public PlatRepositoryMariadb(Connection dbConnection) {
-        this.dbConnection = dbConnection;
+    public PlatRepositoryMariadb(String infoConnection, String user, String pwd)
+            throws SQLException, ClassNotFoundException {
+        Class.forName("org.mariadb.jdbc.Driver");
+        dbConnection = DriverManager.getConnection(infoConnection, user, pwd);
     }
 
     @Override
-    public List<Plat> findAll() {
+    public void close() {
+        try {
+            if (dbConnection != null && !dbConnection.isClosed()) {
+                dbConnection.close();
+            }
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    @Override
+    public ArrayList<Plat> getAllPlats() {
         String query = "SELECT id, nom, description, prix, date_creation, date_modification FROM plats ORDER BY id";
-        List<Plat> plats = new ArrayList<>();
+        ArrayList<Plat> plats = new ArrayList<>();
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
@@ -36,36 +48,36 @@ public class PlatRepositoryMariadb implements PlatRepositoryInterface {
     }
 
     @Override
-    public Optional<Plat> findById(Long id) {
+    public Plat getPlat(Long id) {
         String query = "SELECT id, nom, description, prix, date_creation, date_modification FROM plats WHERE id=?";
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapPlat(rs));
+                    return mapPlat(rs);
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Erreur SQL lors de la lecture d'un plat", e);
         }
-        return Optional.empty();
+        return null;
     }
 
     @Override
-    public Plat create(PlatInput input) {
+    public Plat createPlat(Plat plat) {
         String query = "INSERT INTO plats (nom, description, prix, date_creation) VALUES (?, ?, ?, NOW())";
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, input.nom);
-            ps.setString(2, input.description);
-            ps.setDouble(3, input.prix);
+            ps.setString(1, plat.getNom());
+            ps.setString(2, plat.getDescription());
+            ps.setDouble(3, plat.getPrix());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
                     Long id = keys.getLong(1);
-                    return findById(id).orElseThrow();
+                    return getPlat(id);
                 }
             }
             throw new RuntimeException("Creation du plat sans cle generee");
@@ -75,20 +87,16 @@ public class PlatRepositoryMariadb implements PlatRepositoryInterface {
     }
 
     @Override
-    public Optional<Plat> update(Long id, PlatInput input) {
+    public boolean updatePlat(Long id, Plat plat) {
         String query = "UPDATE plats SET nom=?, description=?, prix=?, date_modification=NOW() WHERE id=?";
 
         try (PreparedStatement ps = dbConnection.prepareStatement(query)) {
-            ps.setString(1, input.nom);
-            ps.setString(2, input.description);
-            ps.setDouble(3, input.prix);
+            ps.setString(1, plat.getNom());
+            ps.setString(2, plat.getDescription());
+            ps.setDouble(3, plat.getPrix());
             ps.setLong(4, id);
 
-            int updatedRows = ps.executeUpdate();
-            if (updatedRows == 0) {
-                return Optional.empty();
-            }
-            return findById(id);
+            return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Erreur SQL lors de la mise a jour d'un plat", e);
         }

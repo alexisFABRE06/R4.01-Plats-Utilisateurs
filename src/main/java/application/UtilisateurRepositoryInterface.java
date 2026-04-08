@@ -1,22 +1,21 @@
 package application;
 
 import domain.Utilisateur;
-import infrastructure.UtilisateurInput;
-
-import java.util.List;
-import java.util.Optional;
+import java.util.ArrayList;
 
 /**
  * Contrat d'acces aux donnees des utilisateurs.
  */
 public interface UtilisateurRepositoryInterface {
-    List<Utilisateur> findAll();
+    void close();
 
-    Optional<Utilisateur> findById(Long id);
+    Utilisateur getUtilisateur(Long id);
 
-    Utilisateur create(UtilisateurInput input);
+    ArrayList<Utilisateur> getAllUtilisateurs();
 
-    Optional<Utilisateur> update(Long id, UtilisateurInput input);
+    Utilisateur createUtilisateur(Utilisateur utilisateur);
+
+    boolean updateUtilisateur(Long id, Utilisateur utilisateur);
 
     boolean delete(Long id);
 }

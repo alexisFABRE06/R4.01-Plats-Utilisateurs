@@ -1,57 +1,56 @@
 package application;
 
 import domain.Utilisateur;
-import infrastructure.UtilisateurInput;
-import jakarta.enterprise.context.Dependent;
-import jakarta.inject.Inject;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service métier pour la gestion des utilisateurs.
  * Gère les opérations CRUD sur les utilisateurs (abonnés) de l'application.
  */
-@Dependent
 public class UtilisateurService {
     private final UtilisateurRepositoryInterface utilisateurRepository;
 
-    @Inject
     public UtilisateurService(UtilisateurRepositoryInterface utilisateurRepository) {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    /**
-     * Récupère tous les utilisateurs.
-     */
-    public List<Utilisateur> listerTousLesUtilisateurs() {
-        return utilisateurRepository.findAll();
+    public String getAllUtilisateursJSON() {
+        List<Utilisateur> allUtilisateurs = utilisateurRepository.getAllUtilisateurs();
+        try (Jsonb jsonb = JsonbBuilder.create()) {
+            return jsonb.toJson(allUtilisateurs);
+        } catch (Exception e) {
+            return "[]";
+        }
     }
 
-    /**
-     * Récupère un utilisateur par son ID.
-     */
-    public Optional<Utilisateur> obtenirUtilisateurParId(Long id) {
-        return utilisateurRepository.findById(id);
+    public String getUtilisateurJSON(Long id) {
+        Utilisateur utilisateur = utilisateurRepository.getUtilisateur(id);
+        if (utilisateur == null) {
+            return null;
+        }
+        try (Jsonb jsonb = JsonbBuilder.create()) {
+            return jsonb.toJson(utilisateur);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    /**
-     * Crée un nouvel utilisateur.
-     */
-    public Utilisateur creerNouvelUtilisateur(UtilisateurInput input) {
-        return utilisateurRepository.create(input);
+    public String createUtilisateurJSON(Utilisateur utilisateur) {
+        Utilisateur created = utilisateurRepository.createUtilisateur(utilisateur);
+        try (Jsonb jsonb = JsonbBuilder.create()) {
+            return jsonb.toJson(created);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    /**
-     * Modifie un utilisateur existant.
-     */
-    public Optional<Utilisateur> modifierUtilisateur(Long id, UtilisateurInput input) {
-        return utilisateurRepository.update(id, input);
+    public boolean updateUtilisateur(Long id, Utilisateur utilisateur) {
+        return utilisateurRepository.updateUtilisateur(id, utilisateur);
     }
 
-    /**
-     * Supprime un utilisateur.
-     */
-    public boolean supprimerUtilisateur(Long id) {
+    public boolean deleteUtilisateur(Long id) {
         return utilisateurRepository.delete(id);
     }
 }
