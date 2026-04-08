@@ -17,7 +17,6 @@ public class Utilisateur {
 
     public Utilisateur() {} // Nécessaire pour Jakarta JSON Binding
 
-    // Constructeur avec paramètres
     public Utilisateur(String nom, String prenom, String email, String telephone, String adresseDefaut) {
         this.nom = nom;
         this.prenom = prenom;
@@ -27,7 +26,6 @@ public class Utilisateur {
         this.dateInscription = LocalDateTime.now();
     }
 
-    // Getters et Setters
     public Long getId() {
         return id;
     }

@@ -28,17 +28,11 @@ public class UtilisateurRessource {
         this.service = new UtilisateurService(utilisateurRepo);
     }
 
-    /**
-     * GET /utilisateurs - Récupère tous les utilisateurs
-     */
     @GET
     public String getAll() {
         return service.getAllUtilisateursJSON();
     }
 
-    /**
-     * GET /utilisateurs/{id} - Récupère un utilisateur par son ID
-     */
     @GET
     @Path("{id}")
     public String getById(@PathParam("id") Long id) {
@@ -49,9 +43,6 @@ public class UtilisateurRessource {
         return result;
     }
 
-    /**
-     * POST /utilisateurs - Crée un nouvel utilisateur
-     */
     @POST
     public Response create(Utilisateur utilisateur) {
         String created = service.createUtilisateurJSON(utilisateur);
@@ -61,9 +52,6 @@ public class UtilisateurRessource {
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
-    /**
-     * PUT /utilisateurs/{id} - Modifie un utilisateur existant
-     */
     @PUT
     @Path("{id}")
     public Response update(@PathParam("id") Long id, Utilisateur utilisateur) {
@@ -73,9 +61,6 @@ public class UtilisateurRessource {
         return Response.ok("updated").build();
     }
 
-    /**
-     * DELETE /utilisateurs/{id} - Supprime un utilisateur
-     */
     @DELETE
     @Path("{id}")
     public Response delete(@PathParam("id") Long id) {

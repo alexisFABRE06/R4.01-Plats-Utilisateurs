@@ -16,7 +16,6 @@ public class Plat {
 
     public Plat() {} // Nécessaire pour Jakarta JSON Binding
 
-    // Constructeur avec paramètres
     public Plat(String nom, String description, Double prix) {
         this.nom = nom;
         this.description = description;
@@ -24,7 +23,6 @@ public class Plat {
         this.dateCreation = LocalDateTime.now();
     }
 
-    // Getters et Setters
     public Long getId() {
         return id;
     }

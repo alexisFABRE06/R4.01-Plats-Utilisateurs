@@ -4,7 +4,7 @@ import domain.Utilisateur;
 import java.util.ArrayList;
 
 /**
- * Contrat d'acces aux donnees des utilisateurs.
+ * Contrat d'accès aux données des utilisateurs.
  */
 public interface UtilisateurRepositoryInterface {
     void close();

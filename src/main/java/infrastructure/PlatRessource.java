@@ -28,17 +28,11 @@ public class PlatRessource {
         this.service = new PlatService(platRepo);
     }
 
-    /**
-     * GET /plats - Récupère tous les plats
-     */
     @GET
     public String getAll() {
         return service.getAllPlatsJSON();
     }
 
-    /**
-     * GET /plats/{id} - Récupère un plat par son ID
-     */
     @GET
     @Path("{id}")
     public String getById(@PathParam("id") Long id) {
@@ -49,9 +43,6 @@ public class PlatRessource {
         return result;
     }
 
-    /**
-     * POST /plats - Crée un nouveau plat
-     */
     @POST
     public Response create(Plat plat) {
         String created = service.createPlatJSON(plat);
@@ -61,9 +52,6 @@ public class PlatRessource {
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
-    /**
-     * PUT /plats/{id} - Modifie un plat existant
-     */
     @PUT
     @Path("{id}")
     public Response update(@PathParam("id") Long id, Plat plat) {
@@ -73,9 +61,6 @@ public class PlatRessource {
         return Response.ok("updated").build();
     }
 
-    /**
-     * DELETE /plats/{id} - Supprime un plat
-     */
     @DELETE
     @Path("{id}")
     public Response delete(@PathParam("id") Long id) {
